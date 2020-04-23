@@ -73,6 +73,20 @@ int main(int argc, char *argv[])
         //Read requested file location
         memset(message, 0, 500);
         READSIZE = recv(cs, message, 2000, 0); //Read message
+
+        //Check for client disconnect
+        if(READSIZE == 0)
+        {
+            puts("Client disconnected");
+            fflush(stdout);
+            break;
+        }//Check for error
+        else if (READSIZE == -1)
+        {
+            perror("Read error");
+        }
+
+        
         char fileName[20]; //Declare filename variables
         strcpy(fileName, message); //Assign filename the contents of messge
         printf("File location request: %s\n", message); //Printing
@@ -100,21 +114,10 @@ int main(int argc, char *argv[])
         fclose(filePointer);
 
         write(cs, "File transferred succesfully", strlen("File transferred succesfully"));
-
-
         
     }
     
-    //Client disconnect
-    if(READSIZE == 0)
-    {
-        puts("Client disconnected");
-        fflush(stdout);
-    }
-    else if (READSIZE == -1)
-    {
-        perror("Read error");
-    }
+    
     
 
     return 0;
