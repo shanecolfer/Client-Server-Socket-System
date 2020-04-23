@@ -11,6 +11,7 @@ int main(int argc, char *argv[])
     int cs; //Client socket
     int connSize; //Size of struct
     int READSIZE; //Size of sockaddr_in for client conn
+    FILE *filePointer; //File pointer
 
     struct sockaddr_in server , client;
     char message [500];
@@ -64,13 +65,44 @@ int main(int argc, char *argv[])
         printf("Connection from client accepted!");
     }
 
+
+
     //Read data from the client
     while(1)
     {
+        //Read requested file location
         memset(message, 0, 500);
+        READSIZE = recv(cs, message, 2000, 0); //Read message
+        char fileName[20]; //Declare filename variables
+        strcpy(fileName, message); //Assign filename the contents of messge
+        printf("File location request: %s\n", message); //Printing
+        write(cs, "File location request received", strlen("File location request received"));
+
+        //Clear message stream
+        bzero(message, sizeof(message));
+
+        //Read in file
         READSIZE = recv(cs, message, 2000, 0);
-        printf("Client message: %s\n", message);
-        write(cs, "What", strlen("What"));
+        filePointer = fopen(fileName, "w");
+
+        //If the file pointer is not empty for some reason
+        if(filePointer != NULL)
+        {
+            //Write the contents of the given file to the new file
+            fwrite(message, sizeof(char), READSIZE, filePointer);
+        }
+        else //If there's an error writing the new file
+        {
+            perror("Error writing file");
+        }
+
+        //Close the file
+        fclose(filePointer);
+
+        write(cs, "File transferred succesfully", strlen("File transferred succesfully"));
+
+
+        
     }
     
     //Client disconnect
