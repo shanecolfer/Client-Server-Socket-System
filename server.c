@@ -89,16 +89,18 @@ int main(int argc, char *argv[])
         
         char fileName[20]; //Declare filename variables
         strcpy(fileName, message); //Assign filename the contents of messge
-        printf("File location request: %s\n", message); //Printing
+        printf("File location request: %s\n", fileName); //Printing
         write(cs, "File location request received", strlen("File location request received"));
+
+        //Create file pointer with location
+        filePointer = fopen(fileName, "w");
 
         //Clear message stream
         bzero(message, sizeof(message));
 
         //Read in file
         READSIZE = recv(cs, message, 2000, 0);
-        filePointer = fopen(fileName, "w");
-
+        
         //If the file pointer is not empty for some reason
         if(filePointer != NULL)
         {

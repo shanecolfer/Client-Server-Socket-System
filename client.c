@@ -22,11 +22,11 @@ int main(int argc, char *argv[])
     int choice;
 
     //Directory names
-    char root[] = "/var/www/html/";
-    char sales[] = "/var/www/html/sales";
-    char promotions[] = "/var/www/html/promotions";
-    char offers[] = "/var/www/html/offers";
-    char marketing[] = "var/www/html/marketing";
+    char root[] = "/var/www/html/dev/";
+    char sales[] = "/var/www/html/dev/sales/";
+    char promotions[] = "/var/www/html/dev/promotions/";
+    char offers[] = "/var/www/html/dev/offers/";
+    char marketing[] = "/var/www/html/dev/marketing/"; 
 
     //Create socket
     SID = socket(AF_INET, SOCK_STREAM, 0);
@@ -82,6 +82,23 @@ int main(int argc, char *argv[])
         {
             case 1 : 
                 strcat(root, fileName);
+                strcpy(fullFilePath, root);
+                break;
+            case 2 : 
+                strcat(sales, fileName);
+                strcpy(fullFilePath, sales);
+                break;
+            case 3 : 
+                strcat(promotions, fileName);
+                strcpy(fullFilePath, promotions);
+                break;
+            case 4 :
+                strcat(offers, fileName);
+                strcpy(fullFilePath, offers);
+                break;
+            case 5 : 
+                strcat(marketing, fileName);
+                strcpy(fullFilePath, marketing);
                 break;
             default :
                 printf("Invalid Response");
@@ -99,10 +116,13 @@ int main(int argc, char *argv[])
         }
 
         //Client message = full file path
-        strcpy(clientMessage, root);
+        strcpy(clientMessage, fullFilePath);
 
         //Send desired file path to server
         send(SID, clientMessage, sizeof(clientMessage), 0);
+
+        printf("Path sent to server : ");
+        printf(clientMessage);
 
         //Wipe client message
         bzero(clientMessage, sizeof(clientMessage));
