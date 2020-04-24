@@ -21,12 +21,7 @@ int main(int argc, char *argv[])
     //Choice variable
     int choice;
 
-    //Directory names
-    char root[] = "/var/www/html/dev/";
-    char sales[] = "/var/www/html/dev/sales/";
-    char promotions[] = "/var/www/html/dev/promotions/";
-    char offers[] = "/var/www/html/dev/offers/";
-    char marketing[] = "/var/www/html/dev/marketing/"; 
+    
 
     //Create socket
     SID = socket(AF_INET, SOCK_STREAM, 0);
@@ -74,6 +69,13 @@ int main(int argc, char *argv[])
         printf("\n 5: Marketing");
         printf("\n 6: Exit\n");
 
+        //Directory names
+        char root[] = "/var/www/html/dev/";
+        char sales[] = "/var/www/html/dev/sales/";
+        char promotions[] = "/var/www/html/dev/promotions/";
+        char offers[] = "/var/www/html/dev/offers/";
+        char marketing[] = "/var/www/html/dev/marketing/"; 
+
         //Read in choice (file destination)
         scanf("%d", &choice);
 
@@ -100,64 +102,82 @@ int main(int argc, char *argv[])
                 strcat(marketing, fileName);
                 strcpy(fullFilePath, marketing);
                 break;
+            case 6 : 
+                printf("Exit chosen");
+                break;
             default :
                 printf("Invalid Response");
-                break;
-        }
-        
-        //Open file specified
-        filePointer = fopen(fileName, "r");
-
-        //If file can't be opened
-        if(filePointer == NULL)
-        {
-            perror("Cannot open file");
-            return 1;
         }
 
-        //Client message = full file path
-        strcpy(clientMessage, fullFilePath);
-
-        //Send desired file path to server
-        send(SID, clientMessage, sizeof(clientMessage), 0);
-
-        printf("Path sent to server : ");
-        printf(clientMessage);
-        printf("\n");
-
-        //Wipe client message
-        bzero(clientMessage, sizeof(clientMessage));
-
-        //Handle server response
-        recv(SID, serverMessage, 500, 0);
-        printf("Received response: ");
-        printf(serverMessage);
-        printf("\n");
-        
-        //Wipe server response
-        bzero(serverMessage, sizeof(serverMessage));
-
-        //Send file to server
-        while(( c = fread(clientMessage, sizeof(char), sizeof(clientMessage), filePointer)) > 0)
+        if(choice == 6)
         {
-            //Send
-            send(SID, clientMessage, c, 0);
-            //Wipe
+            break;
+        }
+        else
+        {
+            //Open file specified
+            filePointer = fopen(fileName, "r");
+
+            //If file can't be opened
+            if(filePointer == NULL)
+            {
+                perror("Cannot open file");
+                return 1;
+            }
+
+            //Client message = full file path
+            strcpy(clientMessage, fullFilePath);
+
+            //Send desired file path to server
+            send(SID, clientMessage, sizeof(clientMessage), 0);
+
+            printf("Path sent to server : ");
+            printf(clientMessage);
+            printf("\n");
+
+            //Wipe client message
             bzero(clientMessage, sizeof(clientMessage));
+
+            //Handle server response
+            recv(SID, serverMessage, 500, 0);
+            printf("Received response: ");
+            printf(serverMessage);
+            printf("\n");
+            
+            //Wipe server response
+            bzero(serverMessage, sizeof(serverMessage));
+
+            //Send file to server
+            while(( c = fread(clientMessage, sizeof(char), sizeof(clientMessage), filePointer)) > 0)
+            {
+                //Send
+                send(SID, clientMessage, c, 0);
+                //Wipe
+                bzero(clientMessage, sizeof(clientMessage));
+            }
+
+            //Handle server response
+            recv(SID, serverMessage, 500, 0);
+            printf("Received response: ");
+            printf(serverMessage);
+            printf("\n\n");
+            
+            //Wipe server response
+            bzero(serverMessage, sizeof(serverMessage));
+
+            //Wipe filename
+            bzero(fileName, sizeof(fileName));
+
+            //Wipe client message
+            bzero(clientMessage, sizeof(clientMessage));
+
+
+            //Close the file pointer
+            fclose(filePointer);
         }
-
-        //Handle server response
-        recv(SID, serverMessage, 500, 0);
-        printf("Received response: ");
-        printf(serverMessage);
-        printf("\n\n");
         
-        //Wipe server response
-        bzero(serverMessage, sizeof(serverMessage));
-
-
-        //Close the file pointer
-        fclose(filePointer);
+        
+        
 
         /* GRAVEYARD
         //Copy file to client message variable
