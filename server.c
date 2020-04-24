@@ -26,7 +26,7 @@ int main(int argc, char *argv[])
     }
     else
     {
-        printf("Socket created!");
+        printf("Socket created!\n");
     }
 
     //Initialise socket once created
@@ -37,19 +37,19 @@ int main(int argc, char *argv[])
     //Bind the config just set, to the socket just created
     if( bind(s, (struct sockaddr *)&server, sizeof(server)) < 0)
     {
-        perror("Problem binding socket");
+        perror("Problem binding socket\n");
         return 1;
     }
     else
     {
-        printf("Bind successful");
+        printf("Bind successful\n");
     }
 
     //Listen for connection
     listen(s,3);
 
     //Accept incoming connection
-    printf("Waiting for connection from client");
+    printf("Waiting for connection from client\n");
     connSize = sizeof(struct sockaddr_in);
 
     cs = accept(s, (struct sockaddr *)&client, (socklen_t*)&connSize);
@@ -62,7 +62,7 @@ int main(int argc, char *argv[])
     }
     else
     {
-        printf("Connection from client accepted!");
+        printf("Connection from client accepted!\n");
     }
 
 
@@ -86,11 +86,10 @@ int main(int argc, char *argv[])
             perror("Read error");
         }
 
-        
         char fileName[20]; //Declare filename variables
         strcpy(fileName, message); //Assign filename the contents of messge
         printf("File location request: %s\n", fileName); //Printing
-        write(cs, "File location request received", strlen("File location request received"));
+        write(cs, "File location request received\n", strlen("File location request received\n"));
 
         //Create file pointer with location
         filePointer = fopen(fileName, "w");
@@ -115,7 +114,7 @@ int main(int argc, char *argv[])
         //Close the file
         fclose(filePointer);
 
-        write(cs, "File transferred succesfully", strlen("File transferred succesfully"));
+        write(cs, "File transferred succesfully\n", strlen("File transferred succesfully\n"));
         
     }
     

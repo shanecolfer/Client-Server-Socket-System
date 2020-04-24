@@ -33,11 +33,11 @@ int main(int argc, char *argv[])
 
     if(SID == -1)
     {
-        printf("Error creating socket");
+        printf("Error creating socket\n");
     }
     else
     {
-        printf("Socket created!");
+        printf("Socket created!\n");
     }
 
     //Set socket variables
@@ -48,32 +48,32 @@ int main(int argc, char *argv[])
     //Connect to server
     if(c = connect(SID, (struct sockaddr *)&server, sizeof(server)) < 0)
     {
-        printf("Connection failed");
+        printf("Connection failed\n");
         return 1;
     }
     else
     {
-        printf("Connected to server successfully!");
+        printf("Connected to server successfully!\n");
     }
 
-
-    //Read in name of file
-    printf("Enter the filename\n");
-    scanf("%s", fileName);
-    printf(fileName);
-
-    //Display options to user for transfer location
-    printf("\nEnter a location to transfer file: ");
-    printf("\n 1: Root of intranet website");
-    printf("\n 2: Sales");
-    printf("\n 3: Promotions");
-    printf("\n 4: Offers");
-    printf("\n 5: Marketing");
-    printf("\n 6: Exit\n");
-
-    //Communicate with server
+    //Communicate with server (file transfer loop)
     while(1)
     {
+
+        //Read in name of file
+        printf("Enter the filename\n");
+        scanf("%s", fileName);
+        printf(fileName);
+
+        //Display options to user for transfer location
+        printf("\nEnter a location to transfer file: ");
+        printf("\n 1: Root of intranet website");
+        printf("\n 2: Sales");
+        printf("\n 3: Promotions");
+        printf("\n 4: Offers");
+        printf("\n 5: Marketing");
+        printf("\n 6: Exit\n");
+
         //Read in choice (file destination)
         scanf("%d", &choice);
 
@@ -123,6 +123,7 @@ int main(int argc, char *argv[])
 
         printf("Path sent to server : ");
         printf(clientMessage);
+        printf("\n");
 
         //Wipe client message
         bzero(clientMessage, sizeof(clientMessage));
@@ -131,6 +132,7 @@ int main(int argc, char *argv[])
         recv(SID, serverMessage, 500, 0);
         printf("Received response: ");
         printf(serverMessage);
+        printf("\n");
         
         //Wipe server response
         bzero(serverMessage, sizeof(serverMessage));
@@ -148,6 +150,7 @@ int main(int argc, char *argv[])
         recv(SID, serverMessage, 500, 0);
         printf("Received response: ");
         printf(serverMessage);
+        printf("\n\n");
         
         //Wipe server response
         bzero(serverMessage, sizeof(serverMessage));
@@ -155,7 +158,6 @@ int main(int argc, char *argv[])
 
         //Close the file pointer
         fclose(filePointer);
-        return 0;
 
         /* GRAVEYARD
         //Copy file to client message variable
