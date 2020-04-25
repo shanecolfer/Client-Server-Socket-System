@@ -3,6 +3,72 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <unistd.h> 
+#include <pthread.h>
+
+pthread_mutex_t thread_lock;
+
+void *newConnection(void *connectionsocket)
+{
+
+    pthread_mutex_init(&thread_lock, NULL);
+
+    char message [500];
+    int cs = *(int*)connectionsocket;
+    int READSIZE;
+    FILE *filePointer; //File pointer
+
+    while(1)
+    {
+        //Read requested file location
+        memset(message, 0, 500);
+        READSIZE = recv(cs, message, 2000, 0); //Read message
+
+        //Check for client disconnect
+        if(READSIZE == 0)
+        {
+            puts("Client disconnected");
+            fflush(stdout);
+            break;
+        }//Check for error
+        else if (READSIZE == -1)
+        {
+            perror("Read error");
+        }
+
+        char fileName[20]; //Declare filename variables
+        strcpy(fileName, message); //Assign filename the contents of messge
+        printf("File location request: %s\n", fileName); //Printing
+        write(cs, "File location request received\n", strlen("File location request received\n"));
+
+        //Create file pointer with location
+        filePointer = fopen(fileName, "w");
+
+        //Clear message stream
+        bzero(message, sizeof(message));
+
+        //Read in file
+        READSIZE = recv(cs, message, 2000, 0);
+        
+        //If the file pointer is not empty for some reason
+        if(filePointer != NULL)
+        {
+            //Write the contents of the given file to the new file
+            fwrite(message, sizeof(char), READSIZE, filePointer);
+        }
+        else //If there's an error writing the new file
+        {
+            perror("Error writing file");
+        }
+
+        //Close the file
+        fclose(filePointer);
+
+        write(cs, "File transferred succesfully\n", strlen("File transferred succesfully\n"));
+        pthread_mutex_destroy(&thread_lock);
+    }
+
+    
+}
 
 int main(int argc, char *argv[])
 {
@@ -54,6 +120,9 @@ int main(int argc, char *argv[])
 
     
     int pid;
+    pthread_t thread_id;
+
+    pthread_mutex_init(&thread_lock, NULL);
 
 
     //Read data from the client
@@ -70,73 +139,21 @@ int main(int argc, char *argv[])
         else
         {
             printf("Connection from client accepted!\n");
-        }
 
-        //Fork
-        pid = fork();
-
-        if(pid < 0)
-        {
-            printf("Fork error");
-        }
-        if(pid == 0) //Child process
-        {
-            while(1)
+            if(pthread_create(&thread_id, NULL, newConnection, (void*) &cs) < 0)
             {
-                //Read requested file location
-                memset(message, 0, 500);
-                READSIZE = recv(cs, message, 2000, 0); //Read message
-
-                //Check for client disconnect
-                if(READSIZE == 0)
-                {
-                    puts("Client disconnected");
-                    fflush(stdout);
-                    break;
-                }//Check for error
-                else if (READSIZE == -1)
-                {
-                    perror("Read error");
-                }
-
-                char fileName[20]; //Declare filename variables
-                strcpy(fileName, message); //Assign filename the contents of messge
-                printf("File location request: %s\n", fileName); //Printing
-                write(cs, "File location request received\n", strlen("File location request received\n"));
-
-                //Create file pointer with location
-                filePointer = fopen(fileName, "w");
-
-                //Clear message stream
-                bzero(message, sizeof(message));
-
-                //Read in file
-                READSIZE = recv(cs, message, 2000, 0);
-                
-                //If the file pointer is not empty for some reason
-                if(filePointer != NULL)
-                {
-                    //Write the contents of the given file to the new file
-                    fwrite(message, sizeof(char), READSIZE, filePointer);
-                }
-                else //If there's an error writing the new file
-                {
-                    perror("Error writing file");
-                }
-
-                //Close the file
-                fclose(filePointer);
-
-                write(cs, "File transferred succesfully\n", strlen("File transferred succesfully\n"));
+                perror("Thread creation error");
+                return 1;
             }
-            
-        }
-        else //Parent
-        {
-            close(cs);
+            else
+            {
+                printf("Thread created\n\n");
+            }
         }
         
     }
+
+    pthread_mutex_destroy(&thread_lock);
 
     return 0;
 }
