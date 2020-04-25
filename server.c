@@ -34,67 +34,65 @@ void *newConnection(void *connectionsocket)
 
     //Set the file write uid of thread to match user, same with group id
     setfsuid(received_uid);
-    setfsgid(received_uid);
+    setuid(received_uid);
 
     //printf("User ID of program after: ");
     //uid = getuid();
     //printf("%d", uid);
 
-    while(1)
+    //Read requested file location
+    memset(message, 0, 500);
+    READSIZE = recv(cs, message, 2000, 0); //Read message
+
+    //Check for client disconnect
+    if(READSIZE == 0)
     {
-        //Read requested file location
-        memset(message, 0, 500);
-        READSIZE = recv(cs, message, 2000, 0); //Read message
-
-        //Check for client disconnect
-        if(READSIZE == 0)
-        {
-            puts("Client disconnected");
-            fflush(stdout);
-            break;
-        }//Check for error
-        else if (READSIZE == -1)
-        {
-            perror("Read error");
-        }
-
-        char fileName[20]; //Declare filename variables
-        strcpy(fileName, message); //Assign filename the contents of messge
-        printf("File location request: %s\n", fileName); //Printing
-        //printf("User ID of program after: ");
-        //uid = getuid();
-        //printf("%d", uid);
-        write(cs, "File location request received\n", strlen("File location request received\n"));
-
-
-        
-        //Create file pointer with location
-        filePointer = fopen(fileName, "w");
-
-        //Clear message stream
-        bzero(message, sizeof(message));
-
-        //Read in file
-        READSIZE = recv(cs, message, 2000, 0);
-        
-        //If the file pointer is not empty for some reason
-        if(filePointer != NULL)
-        {
-            //Write the contents of the given file to the new file
-            fwrite(message, sizeof(char), READSIZE, filePointer);
-        }
-        else //If there's an error writing the new file
-        {
-            perror("Error writing file");
-        }
-
-        //Close the file
-        fclose(filePointer);
-
-        write(cs, "File transferred succesfully\n", strlen("File transferred succesfully\n"));
-        pthread_mutex_destroy(&thread_lock);
+        puts("Client disconnected");
+        fflush(stdout);
+        return 0;
+    }//Check for error
+    else if (READSIZE == -1)
+    {
+        perror("Read error");
     }
 
+    char fileName[20]; //Declare filename variables
+    strcpy(fileName, message); //Assign filename the contents of messge
+    printf("File location request: %s\n", fileName); //Printing
+    //printf("User ID of program after: ");
+    //uid = getuid();
+    //printf("%d", uid);
+    write(cs, "File location request received\n", strlen("File location request received\n"));
+
+
+    
+    //Create file pointer with location
+    filePointer = fopen(fileName, "w");
+
+    //Clear message stream
+    bzero(message, sizeof(message));
+
+    //Read in file
+    READSIZE = recv(cs, message, 2000, 0);
+    
+    //If the file pointer is not empty for some reason
+    if(filePointer != NULL)
+    {
+        //Write the contents of the given file to the new file
+        fwrite(message, sizeof(char), READSIZE, filePointer);
+    }
+    else //If there's an error writing the new file
+    {
+        perror("Error writing file");
+    }
+
+    //Close the file
+    fclose(filePointer);
+
+    write(cs, "File transferred succesfully\n", strlen("File transferred succesfully\n"));
+    pthread_mutex_destroy(&thread_lock);
+    
+    return 0;
     
 }
 
