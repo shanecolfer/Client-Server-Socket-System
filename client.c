@@ -21,6 +21,8 @@ int main(int argc, char *argv[])
     //Choice variable
     int choice;
 
+    int uid;
+
     
 
     //Create socket
@@ -124,6 +126,20 @@ int main(int argc, char *argv[])
                 perror("Cannot open file");
                 return 1;
             }
+
+
+            uid = getuid();
+            int converted_uid = htonl(uid);
+            send(SID, &uid, sizeof(uid), 0);
+            printf("Sent uid to server: ");
+            printf("%d", uid);
+            printf("\n");
+            recv(SID, &serverMessage, 500, 0);
+            printf("Received response: ");
+            printf(serverMessage);
+            printf("\n");
+            //Wipe server response
+            bzero(serverMessage, sizeof(serverMessage));
 
             //Client message = full file path
             strcpy(clientMessage, fullFilePath);

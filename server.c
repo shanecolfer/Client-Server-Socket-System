@@ -1,21 +1,44 @@
+#define _GNU_SOURCE
 #include <stdio.h>
 #include <string.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <unistd.h> 
 #include <pthread.h>
+#include <sys/fsuid.h>
 
 pthread_mutex_t thread_lock;
 
 void *newConnection(void *connectionsocket)
 {
 
+    //int uid;
     pthread_mutex_init(&thread_lock, NULL);
+
+    //printf("User ID of program before: ");
+    //uid = getuid();
+    //printf("%d", uid);
+
+    int received_uid;
 
     char message [500];
     int cs = *(int*)connectionsocket;
     int READSIZE;
     FILE *filePointer; //File pointer
+
+    //Read UID of user
+    READSIZE = read(cs, &received_uid, sizeof(received_uid));
+    printf("UID received: %d\n",received_uid);
+
+    write(cs, "UID Received\n", strlen("File location request received\n"));
+
+    //Set the file write uid of thread to match user, same with group id
+    setfsuid(received_uid);
+    setfsgid(received_uid);
+
+    //printf("User ID of program after: ");
+    //uid = getuid();
+    //printf("%d", uid);
 
     while(1)
     {
@@ -38,8 +61,13 @@ void *newConnection(void *connectionsocket)
         char fileName[20]; //Declare filename variables
         strcpy(fileName, message); //Assign filename the contents of messge
         printf("File location request: %s\n", fileName); //Printing
+        //printf("User ID of program after: ");
+        //uid = getuid();
+        //printf("%d", uid);
         write(cs, "File location request received\n", strlen("File location request received\n"));
 
+
+        
         //Create file pointer with location
         filePointer = fopen(fileName, "w");
 
