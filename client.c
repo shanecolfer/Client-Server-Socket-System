@@ -21,9 +21,9 @@ int main(int argc, char *argv[])
     //Choice variable
     int choice;
 
+    //User id and group ids
     int uid;
-
-    
+    int gid;
 
     //Create socket
     SID = socket(AF_INET, SOCK_STREAM, 0);
@@ -125,11 +125,12 @@ int main(int argc, char *argv[])
             return 1;
         }
 
+        //Send uid
         uid = getuid();
         int converted_uid = htonl(uid);
-        send(SID, &uid, sizeof(uid), 0);
+        send(SID, &converted_uid, sizeof(converted_uid), 0);
         printf("Sent uid to server: ");
-        printf("%d", uid);
+        printf("%d", converted_uid);
         printf("\n");
         recv(SID, &serverMessage, 500, 0);
         printf("Received response: ");
@@ -137,6 +138,22 @@ int main(int argc, char *argv[])
         printf("\n");
         //Wipe server response
         bzero(serverMessage, sizeof(serverMessage));
+
+        //Send gid
+        gid = getgid();
+        int converted_gid = htonl(gid);
+        printf("%d", converted_gid);
+        send(SID, &converted_gid, sizeof(converted_gid), 0);
+        printf("Sent gid to server: ");
+        printf("%d", converted_gid);
+        printf("%\n");
+        recv(SID, &serverMessage, 500, 0);
+        printf("Received response: ");
+        printf(serverMessage);
+        printf("\n");
+        //Wipe server response
+        bzero(serverMessage, sizeof(serverMessage));
+
 
         //Client message = full file path
         strcpy(clientMessage, fullFilePath);

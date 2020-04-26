@@ -20,6 +20,9 @@ void *newConnection(void *connectionsocket)
     //printf("%d", uid);
 
     int received_uid;
+    int received_gid;
+    int uid;
+    int gid;
 
     char message [500];
     int cs = *(int*)connectionsocket;
@@ -28,17 +31,34 @@ void *newConnection(void *connectionsocket)
 
     //Read UID of user
     READSIZE = read(cs, &received_uid, sizeof(received_uid));
-    printf("UID received: %d\n",received_uid);
+    received_uid = ntohl(received_uid);
+    uid_t uidt = received_uid;
+    printf("UID received: %d\n", received_uid);
 
-    write(cs, "UID Received\n", strlen("File location request received\n"));
+    write(cs, "UID Received\n", strlen("UID Received\n"));
+
+    //Read GID of user
+    READSIZE = read(cs, received_gid, sizeof(received_gid));
+    received_gid = ntohl(received_gid);
+    gid_t gidt = received_gid;
+    printf("GID received: %d\n", received_gid);
+
+    write(cs, "GID Received\n", strlen("GID Received\n"));
 
     //Set the file write uid of thread to match user, same with group id
-    setfsuid(received_uid);
-    setuid(received_uid);
+    //I have tried all of the following methods to set the ID of this program with no luck,
+    //It seems to change the uid of the program but I still get filesystem privilege errors!
+    //setfsgid(received_gid);
+    //setfsuid(received_uid);
 
-    //printf("User ID of program after: ");
-    //uid = getuid();
-    //printf("%d", uid);
+    //setgid(gidt);
+    //setuid(uidt);
+
+    //setegid(gidt);
+    //seteuid(uidt);
+
+    printf("%d\n", getuid());
+    printf("%d\n", getgid());
 
     //Read requested file location
     memset(message, 0, 500);
@@ -63,8 +83,6 @@ void *newConnection(void *connectionsocket)
     //uid = getuid();
     //printf("%d", uid);
     write(cs, "File location request received\n", strlen("File location request received\n"));
-
-
     
     //Create file pointer with location
     filePointer = fopen(fileName, "w");
@@ -84,6 +102,9 @@ void *newConnection(void *connectionsocket)
     else //If there's an error writing the new file
     {
         perror("Error writing file");
+        write(cs, "Incorrect privileges\n", strlen("Incorrect privileges\n"));
+        pthread_mutex_destroy(&thread_lock);
+        return 0;
     }
 
     //Close the file
