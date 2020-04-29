@@ -38,7 +38,7 @@ void *newConnection(void *connectionsocket)
     write(cs, "UID Received\n", strlen("UID Received\n"));
 
     //Read GID of user
-    READSIZE = read(cs, received_gid, sizeof(received_gid));
+    READSIZE = read(cs, &received_gid, sizeof(received_gid));
     received_gid = ntohl(received_gid);
     gid_t gidt = received_gid;
     printf("GID received: %d\n", received_gid);
@@ -48,8 +48,8 @@ void *newConnection(void *connectionsocket)
     //Set the file write uid of thread to match user, same with group id
     //I have tried all of the following methods to set the ID of this program with no luck,
     //It seems to change the uid of the program but I still get filesystem privilege errors!
-    //setfsgid(received_gid);
-    //setfsuid(received_uid);
+    setfsgid(gidt);
+    setfsuid(uidt);
 
     //setgid(gidt);
     //setuid(uidt);
@@ -57,8 +57,8 @@ void *newConnection(void *connectionsocket)
     //setegid(gidt);
     //seteuid(uidt);
 
-    printf("%d\n", getuid());
-    printf("%d\n", getgid());
+    printf("Current UID: %d\n", getuid());
+    printf("Current GID: %d\n", getgid());
 
     //Read requested file location
     memset(message, 0, 500);
