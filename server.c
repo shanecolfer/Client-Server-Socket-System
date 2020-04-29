@@ -1,6 +1,7 @@
 #define _GNU_SOURCE
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <unistd.h> 
@@ -21,35 +22,43 @@ void *newConnection(void *connectionsocket)
 
     int received_uid;
     int received_gid;
-    int uid;
-    int gid;
+    uid_t uid = getuid();
+    uid_t gid = getgid();
+    uid_t euid = geteuid();
+    uid_t geid = getegid();
+
+    printf("User ID: %d\n", getuid());
+	printf("Group ID: %d\n", getgid());
+	printf("E User ID: %d\n", geteuid());
+	printf("E Group ID: %d\n", getegid());
 
     char message [500];
     int cs = *(int*)connectionsocket;
     int READSIZE;
     FILE *filePointer; //File pointer
+    FILE *filePointerTemp;
 
     //Read UID of user
     READSIZE = read(cs, &received_uid, sizeof(received_uid));
     received_uid = ntohl(received_uid);
-    uid_t uidt = received_uid;
-    printf("UID received: %d\n", received_uid);
+    uid_t new_uid = received_uid;
+    printf("UID received: %d\n", new_uid);
 
     write(cs, "UID Received\n", strlen("UID Received\n"));
 
     //Read GID of user
     READSIZE = read(cs, &received_gid, sizeof(received_gid));
     received_gid = ntohl(received_gid);
-    gid_t gidt = received_gid;
-    printf("GID received: %d\n", received_gid);
+    gid_t new_gid = received_gid; //THIS IS HARD CODED CHECK THIS FOR SOME REASON IT WAS RETURNING 0 ALL THE TIME
+    printf("GID received: %d\n", new_gid);
 
     write(cs, "GID Received\n", strlen("GID Received\n"));
 
     //Set the file write uid of thread to match user, same with group id
     //I have tried all of the following methods to set the ID of this program with no luck,
     //It seems to change the uid of the program but I still get filesystem privilege errors!
-    setfsgid(gidt);
-    setfsuid(uidt);
+    //setfsgid(gidt);
+    //setfsuid(uidt);
 
     //setgid(gidt);
     //setuid(uidt);
@@ -59,6 +68,31 @@ void *newConnection(void *connectionsocket)
 
     printf("Current UID: %d\n", getuid());
     printf("Current GID: %d\n", getgid());
+
+    if(setreuid(new_uid, uid) < 0)
+    {
+        printf("%s: cannot change euid\n");
+    }
+
+    if(setregid(new_gid, gid) < 0)
+    {
+        printf("%s: cannot change guid\n");
+    }
+
+    if(seteuid(new_uid) < 0)
+    {
+        printf("%s: cannot change euid\n");
+    }
+
+    if(setegid(new_uid) < 0)
+    {
+        printf("%s: cannot change euid\n");
+    }
+
+    printf("User ID: %d\n", getuid());
+	printf("Group ID: %d\n", getgid());
+	printf("E User ID: %d\n", geteuid());
+	printf("E Group ID: %d\n", getegid());
 
     //Read requested file location
     memset(message, 0, 500);
@@ -83,9 +117,17 @@ void *newConnection(void *connectionsocket)
     //uid = getuid();
     //printf("%d", uid);
     write(cs, "File location request received\n", strlen("File location request received\n"));
+
+    //Write to a temp file
+    char tempDir[500] = "/var/www/html/dev/temps/test.txt";
+
+
+    //Filepointer temp = location of temp file 
+    //filePointerTemp = fopen(tempDir, "w");
+
     
-    //Create file pointer with location
-    filePointer = fopen(fileName, "w");
+    //Create file pointer to temp location
+    filePointer = fopen(tempDir, "w");
 
     //Clear message stream
     bzero(message, sizeof(message));
@@ -98,6 +140,7 @@ void *newConnection(void *connectionsocket)
     {
         //Write the contents of the given file to the new file
         fwrite(message, sizeof(char), READSIZE, filePointer);
+        printf("Temp file written\n");
     }
     else //If there's an error writing the new file
     {
@@ -109,6 +152,19 @@ void *newConnection(void *connectionsocket)
 
     //Close the file
     fclose(filePointer);
+
+
+    char cp [500] = "cp ";
+    char fileName1[500] = "/var/www/html/dev/offers/test.txt";
+    strcat(cp, tempDir);
+    strcat(cp, " ");
+    strcat(cp, fileName1);
+
+    printf("Full Command: %s\n", cp);
+
+    
+
+    system(cp);
 
     write(cs, "File transferred succesfully\n", strlen("File transferred succesfully\n"));
     pthread_mutex_destroy(&thread_lock);
