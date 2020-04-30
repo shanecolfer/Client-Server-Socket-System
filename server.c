@@ -198,11 +198,17 @@ void *newConnection(void *connectionsocket)
 
     printf("Full Command: %s\n", cp);
 
+    //Carry out system command and check for error
+    if(system(cp) == 0)
+    {
+        write(cs, "File transfer successful!\n", strlen("File transfer successful!\n"));
+    }
+    else
+    {
+        write(cs, "Incorrect privilges\n", strlen("Incorrect priviliges\n"));
+    }
     
 
-    system(cp);
-
-    write(cs, "File transferred succesfully\n", strlen("File transferred succesfully\n"));
     pthread_mutex_destroy(&thread_lock);
     
     return 0;
