@@ -7,6 +7,7 @@
 #include <unistd.h> 
 #include <pthread.h>
 #include <sys/fsuid.h>
+#include <grp.h>
 
 pthread_mutex_t thread_lock;
 
@@ -26,6 +27,15 @@ void *newConnection(void *connectionsocket)
     uid_t gid = getgid();
     uid_t euid = geteuid();
     uid_t geid = getegid();
+
+    gid_t supp_groups[] = {};
+
+    int j, ngroups;
+    gid_t *groups;
+    struct group *gr;
+
+    ngroups = 10;
+    groups = malloc(ngroups * sizeof (gid_t));
 
     printf("User ID: %d\n", getuid());
 	printf("Group ID: %d\n", getgid());
@@ -49,7 +59,7 @@ void *newConnection(void *connectionsocket)
     //Read GID of user
     READSIZE = read(cs, &received_gid, sizeof(received_gid));
     received_gid = ntohl(received_gid);
-    gid_t new_gid = received_gid; //THIS IS HARD CODED CHECK THIS FOR SOME REASON IT WAS RETURNING 0 ALL THE TIME
+    gid_t new_gid = received_gid; 
     printf("GID received: %d\n", new_gid);
 
     write(cs, "GID Received\n", strlen("GID Received\n"));
@@ -69,6 +79,19 @@ void *newConnection(void *connectionsocket)
     printf("Current UID: %d\n", getuid());
     printf("Current GID: %d\n", getgid());
 
+    //Get groups
+    getgrouplist("sarah", getuid(), groups, &ngroups);
+
+    for(j = 0; j < ngroups; j++)
+    {
+        supp_groups[j] = groups[j];
+        printf("- %d", supp_groups[j]);
+    }
+
+    //Set groups
+    setgroups(10, supp_groups);
+
+    //Set IDs
     if(setreuid(new_uid, uid) < 0)
     {
         printf("%s: cannot change euid\n");
@@ -89,10 +112,14 @@ void *newConnection(void *connectionsocket)
         printf("%s: cannot change euid\n");
     }
 
+
+
     printf("User ID: %d\n", getuid());
 	printf("Group ID: %d\n", getgid());
 	printf("E User ID: %d\n", geteuid());
 	printf("E Group ID: %d\n", getegid());
+
+    
 
     //Read requested file location
     memset(message, 0, 500);
@@ -110,7 +137,7 @@ void *newConnection(void *connectionsocket)
         perror("Read error");
     }
 
-    char fileName[20]; //Declare filename variables
+    char fileName[500]; //Declare filename variables
     strcpy(fileName, message); //Assign filename the contents of messge
     printf("File location request: %s\n", fileName); //Printing
     //printf("User ID of program after: ");
@@ -119,7 +146,7 @@ void *newConnection(void *connectionsocket)
     write(cs, "File location request received\n", strlen("File location request received\n"));
 
     //Write to a temp file
-    char tempDir[500] = "/var/www/html/dev/temps/test.txt";
+    char tempDir[500] = "/var/www/html/dev/temps/tmp.tmp";
 
 
     //Filepointer temp = location of temp file 
@@ -155,10 +182,11 @@ void *newConnection(void *connectionsocket)
 
 
     char cp [500] = "cp ";
-    char fileName1[500] = "/var/www/html/dev/offers/test.txt";
+    //char fileName1[500] = "/var/www/html/dev/offers/test.txt";
+    printf(fileName);
     strcat(cp, tempDir);
     strcat(cp, " ");
-    strcat(cp, fileName1);
+    strcat(cp, fileName);
 
     printf("Full Command: %s\n", cp);
 
