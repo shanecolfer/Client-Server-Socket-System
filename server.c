@@ -8,6 +8,7 @@
 #include <pthread.h>
 #include <sys/fsuid.h>
 #include <grp.h>
+#include <pwd.h>
 
 pthread_mutex_t thread_lock;
 
@@ -78,10 +79,17 @@ void *newConnection(void *connectionsocket)
 
     printf("Current UID: %d\n", getuid());
     printf("Current GID: %d\n", getgid());
+    
+    //Get user name from password file struct
+    struct passwd *pw;
+    pw = getpwuid(new_uid);
 
-    //Get groups
-    getgrouplist("sarah", getuid(), groups, &ngroups);
+    printf("User name: %s", pw->pw_name);
 
+    //Get groups according to user name
+    getgrouplist(pw->pw_name, getuid(), groups, &ngroups); //HARD CODED GET THE USER NAME
+
+    //Put groups into array
     for(j = 0; j < ngroups; j++)
     {
         supp_groups[j] = groups[j];
