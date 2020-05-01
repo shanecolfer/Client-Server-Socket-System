@@ -129,9 +129,6 @@ int main(int argc, char *argv[])
         uid = getuid();
         int converted_uid = htonl(uid);
         send(SID, &converted_uid, sizeof(converted_uid), 0);
-        printf("Sent uid to server: ");
-        printf("%d", converted_uid);
-        printf("\n");
         recv(SID, &serverMessage, 500, 0);
         printf("Received response: ");
         printf(serverMessage);
@@ -142,11 +139,7 @@ int main(int argc, char *argv[])
         //Send gid
         gid = getgid();
         int converted_gid = htonl(gid);
-        printf("%d", converted_gid);
         send(SID, &converted_gid, sizeof(converted_gid), 0);
-        printf("Sent gid to server: ");
-        printf("%d", converted_gid);
-        printf("%\n");
         recv(SID, &serverMessage, 500, 0);
         printf("Received response: ");
         printf(serverMessage);
@@ -163,7 +156,7 @@ int main(int argc, char *argv[])
 
         printf("Path sent to server : ");
         printf(clientMessage);
-        printf("\n");
+        printf("\n\n");
 
         //Wipe client message
         bzero(clientMessage, sizeof(clientMessage));

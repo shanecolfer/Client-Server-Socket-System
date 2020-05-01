@@ -31,17 +31,20 @@ void *newConnection(void *connectionsocket)
 
     gid_t supp_groups[] = {};
 
+    //Make sure that we're running with root privilege
+    uid = 0;
+
+    setreuid(uid, uid);
+    setregid(uid, uid);
+    seteuid(uid);
+    setegid(gid);
+
     int j, ngroups;
     gid_t *groups;
     struct group *gr;
 
     ngroups = 10;
     groups = malloc(ngroups * sizeof (gid_t));
-
-    printf("User ID: %d\n", getuid());
-	printf("Group ID: %d\n", getgid());
-	printf("E User ID: %d\n", geteuid());
-	printf("E Group ID: %d\n", getegid());
 
     char message [500];
     int cs = *(int*)connectionsocket;
@@ -64,27 +67,10 @@ void *newConnection(void *connectionsocket)
     printf("GID received: %d\n", new_gid);
 
     write(cs, "GID Received\n", strlen("GID Received\n"));
-
-    //Set the file write uid of thread to match user, same with group id
-    //I have tried all of the following methods to set the ID of this program with no luck,
-    //It seems to change the uid of the program but I still get filesystem privilege errors!
-    //setfsgid(gidt);
-    //setfsuid(uidt);
-
-    //setgid(gidt);
-    //setuid(uidt);
-
-    //setegid(gidt);
-    //seteuid(uidt);
-
-    printf("Current UID: %d\n", getuid());
-    printf("Current GID: %d\n", getgid());
     
     //Get user name from password file struct
     struct passwd *pw;
     pw = getpwuid(new_uid);
-
-    printf("User name: %s", pw->pw_name);
 
     //Get groups according to user name
     getgrouplist(pw->pw_name, getuid(), groups, &ngroups); //HARD CODED GET THE USER NAME
@@ -93,41 +79,7 @@ void *newConnection(void *connectionsocket)
     for(j = 0; j < ngroups; j++)
     {
         supp_groups[j] = groups[j];
-        printf("- %d", supp_groups[j]);
     }
-
-    //Set groups
-    setgroups(10, supp_groups);
-
-    //Set IDs
-    if(setreuid(new_uid, uid) < 0)
-    {
-        printf("%s: cannot change euid\n");
-    }
-
-    if(setregid(new_gid, gid) < 0)
-    {
-        printf("%s: cannot change guid\n");
-    }
-
-    if(seteuid(new_uid) < 0)
-    {
-        printf("%s: cannot change euid\n");
-    }
-
-    if(setegid(new_uid) < 0)
-    {
-        printf("%s: cannot change euid\n");
-    }
-
-
-
-    printf("User ID: %d\n", getuid());
-	printf("Group ID: %d\n", getgid());
-	printf("E User ID: %d\n", geteuid());
-	printf("E Group ID: %d\n", getegid());
-
-    
 
     //Read requested file location
     memset(message, 0, 500);
@@ -191,22 +143,66 @@ void *newConnection(void *connectionsocket)
 
     char cp [500] = "cp ";
     //char fileName1[500] = "/var/www/html/dev/offers/test.txt";
-    printf(fileName);
     strcat(cp, tempDir);
     strcat(cp, " ");
     strcat(cp, fileName);
 
-    printf("Full Command: %s\n", cp);
+    //printf("Full Command: %s\n", cp);
+    //Set groups
+    setgroups(10, supp_groups);
+
+    //Set IDs
+    
+    if(setreuid(new_uid, uid) < 0)
+    {
+        printf("%s: cannot change euid\n");
+    }
+
+    if(setregid(new_gid, gid) < 0)
+    {
+        printf("%s: cannot change guid\n");
+    }
+
+    if(seteuid(new_uid) < 0)
+    {
+        printf("%s: cannot change euid\n");
+    }
+
+    if(setegid(new_uid) < 0)
+    {
+        printf("%s: cannot change euid\n");
+    }
+
+    printf("User ID: %d\n", getuid());
+	printf("Group ID: %d\n", getgid());
+	printf("E User ID: %d\n", geteuid());
+	printf("E Group ID: %d\n", getegid());
 
     //Carry out system command and check for error
     if(system(cp) == 0)
     {
+        printf("File written succesfully\n");
         write(cs, "File transfer successful!\n", strlen("File transfer successful!\n"));
     }
     else
     {
         write(cs, "Incorrect privilges\n", strlen("Incorrect priviliges\n"));
     }
+
+    //Swap back to root privilege
+    uid = 0;
+    gid = 0;
+
+    setregid(gid, gid);
+    setreuid(uid, uid);
+    setegid(gid);
+    seteuid(uid);
+    
+
+    printf("User ID: %d\n", getuid());
+	printf("Group ID: %d\n", getgid());
+	printf("E User ID: %d\n", geteuid());
+	printf("E Group ID: %d\n", getegid());
     
 
     pthread_mutex_destroy(&thread_lock);
